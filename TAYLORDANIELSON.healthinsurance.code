@@ -1,0 +1,65 @@
+## Build linear regression model
+modelT <- lm(charges~children+isSmoker+age+bmi, insurance)
+summary(modelT)
+# observe model diagnostics
+confint(modelT)
+plot(modelT$residuals)
+cbind( modelT$coefficients, confint(modelT))
+
+## split the data into training and test set
+set.seed(123)
+inTrain <- createDataPartition(y=insurance$charges, p=0.7, list=FALSE)
+Training <- insurance[inTrain,]
+Testing <- insurance[-inTrain,]
+# build the model
+MTTrain <- lm(charges~children+isSmoker+age+bmi, data = Training)
+# make predictions and compute the R2, RMSE and MAE
+predictions <- MTTrain %>% predict(Testing)
+data.frame(R2 = R2(predictions, Testing$charges),
+           RMSE = RMSE(predictions, Testing$charges), 
+           MAE = MAE(predictions, Testing$charges))
+View(predictions)
+
+# find prediction error rate
+RMSE(predictions, Testing$charges)/mean(Testing$charges)
+
+
+## Build classification model (logistic regression)
+x <- mean(insurance$charges)
+chargebin <- ifelse(insurance$charges >= x, 1, 0)
+View(chargebin)
+LM6 <- glm(chargebin~children+isSmoker+age+bmi, insurance, family="binomial") 
+summary(LM6)
+
+# remove insignificant variables from model
+LM7 <- glm(chargebin~isSmoker+age, insurance, family="binomial")
+summary(LM7)
+# diagnostics
+signal <- predict(LM7, insurance)
+pred_prob <- (1/(1 + exp(-signal)))
+View(pred_prob)
+summary(pred_prob)
+confint(LM7)
+
+
+#create training and validation data from given data
+install.packages('caTools')
+library(caTools)
+
+set.seed(123)
+inTrain <- createDataPartition(y=insurance$charges, p=0.7, list=FALSE)
+Training <- insurance[inTrain,]
+Testing <- insurance[-inTrain,]
+# build the model
+M7Train <- glm(chargebin~isSmoker+age, data = Training)
+
+#get training and test data
+dresstrain <- subset(train, split == TRUE)
+dresstest <- subset(train, split == FALSE)
+
+#logistic regression model
+model <- glm (Recommended ~ .-ID, data = dresstrain, family = binomial)
+summary(model)
+predict <- predict(model, type = 'response')
+#confusion matrix
+table(dresstrain$Recommended, predict > 0.5)
